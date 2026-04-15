@@ -31,29 +31,58 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            gap: 20px;
+        }
+
+        .list-tabs {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            flex: 1;
+            padding-bottom: 5px;
+        }
+
+        .list-tab {
+            background: rgba(40, 40, 40, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #888;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .list-tab:hover {
+            background: rgba(60, 60, 60, 0.6);
+            color: #fff;
+        }
+
+        .list-tab.active {
+            background: rgba(80, 80, 80, 0.8);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .list-tab-rop {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .list-tab-date {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
         }
 
         .list-info {
-            display: flex;
-            gap: 30px;
-        }
-
-        .info-item {
-            text-align: center;
-        }
-
-        .info-label {
-            font-size: 12px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .info-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: #fff;
-            margin-top: 5px;
+            display: none;
         }
 
         .new-sand-btn {
@@ -373,11 +402,8 @@
 <body>
     <!-- Top Bar -->
     <div class="top-bar">
-        <div class="list-info" id="listInfo">
-            <div class="info-item">
-                <div class="info-label">Выберите список</div>
-                <div class="info-value">-</div>
-            </div>
+        <div class="list-tabs" id="listTabs">
+            <!-- Tabs will be inserted here -->
         </div>
         <button class="new-sand-btn" onclick="openNewSandModal()">+ Новый песок</button>
     </div>
@@ -499,37 +525,28 @@
             }
         }
 
-        // Update top bar
+        // Update top bar with tabs
         function updateTopBar() {
-            const listInfo = document.getElementById('listInfo');
+            const tabsContainer = document.getElementById('listTabs');
             
-            if (!currentListId || sandLists.length === 0) {
-                listInfo.innerHTML = `
-                    <div class="info-item">
-                        <div class="info-label">Выберите список</div>
-                        <div class="info-value">-</div>
-                    </div>
-                `;
+            if (sandLists.length === 0) {
+                tabsContainer.innerHTML = '';
                 return;
             }
 
-            const currentList = sandLists.find(l => l.id === currentListId);
-            if (!currentList) return;
+            tabsContainer.innerHTML = sandLists.map(list => `
+                <div class="list-tab ${list.id === currentListId ? 'active' : ''}" onclick="selectList('${list.id}')">
+                    <div class="list-tab-rop">${list.rop}</div>
+                    <div class="list-tab-date">${formatDate(list.date)}</div>
+                </div>
+            `).join('');
+        }
 
-            listInfo.innerHTML = `
-                <div class="info-item">
-                    <div class="info-label">РОП</div>
-                    <div class="info-value">${currentList.rop}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Дата</div>
-                    <div class="info-value">${formatDate(currentList.date)}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Тип</div>
-                    <div class="info-value">${currentList.work_type === 'офис' ? 'Офис' : 'Удаленка'}</div>
-                </div>
-            `;
+        // Select a list
+        function selectList(listId) {
+            currentListId = listId;
+            updateTopBar();
+            renderLists();
         }
 
         // Format date
@@ -542,7 +559,7 @@
             });
         }
 
-        // Render all lists
+        // Render only the selected list
         function renderLists() {
             const container = document.getElementById('listsContainer');
             
@@ -556,66 +573,76 @@
                 return;
             }
 
-            container.innerHTML = sandLists.map(list => {
-                const columns = getColumnsForList(list);
-                const names = list.names.split('\n').filter(n => n.trim());
-                
-                let tableHtml = `
-                    <div class="sand-list-card">
-                        <div class="sand-list-header">
-                            <div class="sand-list-title">${list.rop} - ${formatDate(list.date)}</div>
-                            <button class="edit-btn" onclick="openEditModal('${list.id}')">Редактировать</button>
-                        </div>
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>ФИО</th>
-                                        ${columns.map(col => `<th>${col}</th>`).join('')}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${names.map(name => `
-                                        <tr>
-                                            <td>${name}</td>
-                                            ${columns.map(col => {
-                                                const cellId = `${list.id}_${sanitizeName(name)}_${sanitizeName(col)}`;
-                                                const isChecked = list.checkboxes && list.checkboxes[cellId] ? 'checked' : '';
-                                                return `
-                                                    <td>
-                                                        <div class="checkbox-wrapper">
-                                                            <input type="checkbox" 
-                                                                data-list-id="${list.id}" 
-                                                                data-name="${name}" 
-                                                                data-column="${col}"
-                                                                ${isChecked}
-                                                                onchange="updateCheckbox(this)">
-                                                        </div>
-                                                    </td>
-                                                `;
-                                            }).join('')}
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                        ${list.work_type === 'офис' ? `
-                            <div class="control-item">
-                                <span class="control-label">Проконтролировать технику в классе песка</span>
-                                <div class="checkbox-wrapper">
-                                    <input type="checkbox" 
-                                        data-list-id="${list.id}" 
-                                        data-control="class_technique"
-                                        ${list.checkboxes && list.checkboxes[`${list.id}_class_technique`] ? 'checked' : ''}
-                                        onchange="updateControlCheckbox(this)">
-                                </div>
-                            </div>
-                        ` : ''}
+            const currentList = sandLists.find(l => l.id === currentListId);
+            
+            if (!currentList) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">Список не найден</div>
                     </div>
                 `;
-                
-                return tableHtml;
-            }).join('');
+                return;
+            }
+
+            const columns = getColumnsForList(currentList);
+            const names = currentList.names.split('\n').filter(n => n.trim());
+            
+            let tableHtml = `
+                <div class="sand-list-card">
+                    <div class="sand-list-header">
+                        <div class="sand-list-title">${currentList.rop} - ${formatDate(currentList.date)} (${currentList.work_type === 'офис' ? 'Офис' : 'Удаленка'})</div>
+                        <button class="edit-btn" onclick="openEditModal('${currentList.id}')">Редактировать</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ФИО</th>
+                                    ${columns.map(col => `<th>${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${names.map(name => `
+                                    <tr>
+                                        <td>${name}</td>
+                                        ${columns.map(col => {
+                                            const cellId = `${currentList.id}_${sanitizeName(name)}_${sanitizeName(col)}`;
+                                            const isChecked = currentList.checkboxes && currentList.checkboxes[cellId] ? 'checked' : '';
+                                            return `
+                                                <td>
+                                                    <div class="checkbox-wrapper">
+                                                        <input type="checkbox" 
+                                                            data-list-id="${currentList.id}" 
+                                                            data-name="${name}" 
+                                                            data-column="${col}"
+                                                            ${isChecked}
+                                                            onchange="updateCheckbox(this)">
+                                                    </div>
+                                                </td>
+                                            `;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${currentList.work_type === 'офис' ? `
+                        <div class="control-item">
+                            <span class="control-label">Проконтролировать технику в классе песка</span>
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" 
+                                    data-list-id="${currentList.id}" 
+                                    data-control="class_technique"
+                                    ${currentList.checkboxes && currentList.checkboxes[`${currentList.id}_class_technique`] ? 'checked' : ''}
+                                    onchange="updateControlCheckbox(this)">
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            container.innerHTML = tableHtml;
         }
 
         // Get columns for a list
