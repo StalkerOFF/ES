@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Песок - Трекер задач</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -441,12 +440,13 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // Supabase Configuration
         const SUPABASE_URL = 'https://wnvjebxkfjqnyyzpsszc.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudmplYnhrZmpxbnl5enBzc3pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTIzNzUsImV4cCI6MjA5MTcyODM3NX0.EqK7Sx1v-dCs4d0EQZuXJe3LaRZdF1p618ENQQpZcXU';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // Column definitions
         const OFFICE_COLUMNS = [
@@ -479,7 +479,7 @@
         // Load sand lists from Supabase
         async function loadSandLists() {
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('sand_lists')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -652,7 +652,7 @@
             list.checkboxes[cellId] = checkbox.checked;
 
             try {
-                await supabase
+                await supabaseClient
                     .from('sand_lists')
                     .update({ checkboxes: list.checkboxes })
                     .eq('id', listId);
@@ -678,7 +678,7 @@
             list.checkboxes[cellId] = checkbox.checked;
 
             try {
-                await supabase
+                await supabaseClient
                     .from('sand_lists')
                     .update({ checkboxes: list.checkboxes })
                     .eq('id', listId);
@@ -736,7 +736,7 @@
                 if (editId) {
                     // Update existing
                     const list = sandLists.find(l => l.id === editId);
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('sand_lists')
                         .update({
                             rop,
@@ -756,7 +756,7 @@
                     }
                 } else {
                     // Create new
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('sand_lists')
                         .insert([{
                             rop,
