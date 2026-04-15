@@ -462,6 +462,9 @@
                     <button type="button" class="modal-btn modal-btn-secondary" onclick="closeSandModal()">Отмена</button>
                     <button type="submit" class="modal-btn modal-btn-primary">Сохранить</button>
                 </div>
+                <div class="modal-buttons" id="deleteButtonContainer" style="display: none;">
+                    <button type="button" class="modal-btn" style="background: linear-gradient(135deg, #ff4a4a 0%, #d22d2d 100%); color: #fff; width: 100%;" onclick="deleteCurrentList()">Удалить</button>
+                </div>
             </form>
         </div>
     </div>
@@ -738,12 +741,50 @@
             document.getElementById('workTypeSelect').value = list.work_type;
             document.getElementById('namesTextarea').value = list.names;
             
+            document.getElementById('deleteButtonContainer').style.display = 'flex';
             document.getElementById('sandModal').classList.add('active');
         }
 
         // Close sand modal
         function closeSandModal() {
             document.getElementById('sandModal').classList.remove('active');
+            document.getElementById('deleteButtonContainer').style.display = 'none';
+            document.getElementById('sandForm').reset();
+            document.getElementById('editId').value = '';
+        }
+
+        // Delete current list
+        async function deleteCurrentList() {
+            const editId = document.getElementById('editId').value;
+            if (!editId) return;
+
+            if (!confirm('Вы уверены, что хотите удалить этот список? Это действие нельзя отменить.')) {
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('sand_lists')
+                    .delete()
+                    .eq('id', editId);
+
+                if (error) throw error;
+
+                // Remove from local state
+                sandLists = sandLists.filter(l => l.id !== editId);
+
+                // Update current list ID
+                if (currentListId === editId) {
+                    currentListId = sandLists.length > 0 ? sandLists[0].id : null;
+                }
+
+                updateTopBar();
+                renderLists();
+                closeSandModal();
+            } catch (error) {
+                console.error('Error deleting list:', error);
+                alert('Ошибка удаления: ' + error.message);
+            }
         }
 
         // Handle form submission
