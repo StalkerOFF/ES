@@ -136,12 +136,38 @@
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .sand-list-title-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .sand-list-title {
             font-size: 20px;
             font-weight: 600;
             color: #fff;
+        }
+
+        .quick-check-btn {
+            background: rgba(60, 60, 60, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .quick-check-btn:hover {
+            background: rgba(80, 80, 80, 0.7);
+            color: #fff;
+            border-color: #4a9eff;
         }
 
         .edit-btn {
@@ -597,7 +623,18 @@
             let tableHtml = `
                 <div class="sand-list-card">
                     <div class="sand-list-header">
-                        <div class="sand-list-title">${currentList.rop} - ${formatDate(currentList.date)} (${currentList.work_type === 'офис' ? 'Офис' : 'Удаленка'})</div>
+                        <div class="sand-list-title-group">
+                            <div class="sand-list-title">${currentList.rop} - ${formatDate(currentList.date)} (${currentList.work_type === 'офис' ? 'Офис' : 'Удаленка'})</div>
+                            ${currentList.work_type === 'офис' || columns.includes('Создать аккаунты Битрикс') || columns.includes('Создать ключи в росгварде') || columns.includes('Техника отфоткана в инвентарку') ? `
+                                <button class="quick-check-btn" onclick="quickCheckAll('${currentList.id}', 'Создать аккаунты Битрикс')">Битрикс</button>
+                            ` : ''}
+                            ${columns.includes('Создать ключи в росгварде') ? `
+                                <button class="quick-check-btn" onclick="quickCheckAll('${currentList.id}', 'Создать ключи в росгварде')">Росгвардия</button>
+                            ` : ''}
+                            ${columns.includes('Техника отфоткана в инвентарку') ? `
+                                <button class="quick-check-btn" onclick="quickCheckAll('${currentList.id}', 'Техника отфоткана в инвентарку')">Фото</button>
+                            ` : ''}
+                        </div>
                         <button class="edit-btn" onclick="openEditModal('${currentList.id}')">Редактировать</button>
                     </div>
                     <div class="table-container">
@@ -718,6 +755,37 @@
             } catch (error) {
                 console.error('Error updating control checkbox:', error);
                 checkbox.checked = !checkbox.checked;
+                alert('Ошибка сохранения: ' + error.message);
+            }
+        }
+
+        // Quick check all checkboxes for a column
+        async function quickCheckAll(listId, columnName) {
+            const list = sandLists.find(l => l.id === listId);
+            if (!list) return;
+
+            if (!list.checkboxes) {
+                list.checkboxes = {};
+            }
+
+            const names = list.names.split('\n').filter(n => n.trim());
+            
+            // Set all checkboxes for this column to true
+            names.forEach(name => {
+                const cellId = `${listId}_${sanitizeName(name)}_${sanitizeName(columnName)}`;
+                list.checkboxes[cellId] = true;
+            });
+
+            try {
+                await supabaseClient
+                    .from('sand_lists')
+                    .update({ checkboxes: list.checkboxes })
+                    .eq('id', listId);
+                
+                // Re-render to show updated checkboxes
+                renderLists();
+            } catch (error) {
+                console.error('Error quick checking all:', error);
                 alert('Ошибка сохранения: ' + error.message);
             }
         }
