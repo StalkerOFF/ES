@@ -625,9 +625,7 @@
                     <div class="sand-list-header">
                         <div class="sand-list-title-group">
                             <div class="sand-list-title">${currentList.rop} - ${formatDate(currentList.date)} (${currentList.work_type === 'офис' ? 'Офис' : 'Удаленка'})</div>
-                            ${currentList.work_type === 'офис' || columns.includes('Создать аккаунты Битрикс') || columns.includes('Создать ключи в росгварде') || columns.includes('Техника отфоткана в инвентарку') ? `
-                                <button class="quick-check-btn" onclick="quickCheckAll('${currentList.id}', 'Создать аккаунты Битрикс')">Битрикс</button>
-                            ` : ''}
+                            <button class="quick-check-btn" onclick="quickCheckAll('${currentList.id}', 'Создать аккаунты Битрикс')">Битрикс</button>
                             ${columns.includes('Создать ключи в росгварде') ? `
                                 <button class="quick-check-btn" onclick="quickCheckAll('${currentList.id}', 'Создать ключи в росгварде')">Росгвардия</button>
                             ` : ''}
